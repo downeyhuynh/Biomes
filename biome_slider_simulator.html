@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biome Slider Simulator</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 40%, #ecfccb 100%);
+      color: #0f172a;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 2rem;
+    }
+
+    .subtitle {
+      margin: 0 0 22px;
+      color: #475569;
+      line-height: 1.5;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel,
+    .visual-card,
+    .biome-card {
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 24px;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+    }
+
+    .panel {
+      padding: 22px;
+      position: sticky;
+      top: 20px;
+    }
+
+    .panel h2,
+    .visual-card h2,
+    .biome-card h2 {
+      margin: 0 0 16px;
+      font-size: 1.2rem;
+    }
+
+    .control-group {
+      margin-bottom: 18px;
+      padding: 14px;
+      border-radius: 18px;
+      background: #f8fafc;
+      border: 1px solid rgba(15, 23, 42, 0.05);
+    }
+
+    .control-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .value-pill {
+      min-width: 72px;
+      text-align: center;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: white;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      color: #0f766e;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: #2563eb;
+      cursor: pointer;
+    }
+
+    .range-labels {
+      margin-top: 6px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: #64748b;
+      font-size: 0.8rem;
+    }
+
+    .right-col {
+      display: grid;
+      gap: 18px;
+    }
+
+    .visual-card {
+      padding: 20px;
+    }
+
+    .labels {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    .label-chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #f8fafc;
+      border: 1px solid rgba(15, 23, 42, 0.06);
+    }
+
+    .world {
+      position: relative;
+      min-height: 460px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 50% 10%, rgba(255,255,255,0.7), transparent 30%),
+        linear-gradient(to bottom, #bfdbfe 0%, #dbeafe 45%, #ecfeff 100%);
+    }
+
+    .sun {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fde68a 0%, #f59e0b 70%);
+      box-shadow: 0 0 40px rgba(245,158,11,0.5);
+      z-index: 5;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    .north-tag,
+    .south-tag,
+    .equator-tag,
+    .ocean-tag,
+    .land-tag {
+      position: absolute;
+      z-index: 4;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(15,23,42,0.08);
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: #334155;
+      box-shadow: 0 8px 18px rgba(15,23,42,0.08);
+    }
+
+    .north-tag { top: 14px; left: 50%; transform: translateX(-50%); }
+    .south-tag { bottom: 14px; left: 50%; transform: translateX(-50%); }
+    .equator-tag { left: 50%; top: 50%; transform: translate(-50%, -50%) translateY(-28px); }
+    .ocean-tag { left: 18px; top: 50%; transform: translateY(-50%); }
+    .land-tag { right: 18px; top: 50%; transform: translateY(-50%); }
+
+    .globe-wrap {
+      position: relative;
+      width: 390px;
+      height: 390px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .globe-shadow {
+      position: absolute;
+      width: 310px;
+      height: 42px;
+      bottom: 24px;
+      background: radial-gradient(circle, rgba(15,23,42,0.22), transparent 68%);
+      filter: blur(10px);
+    }
+
+    .globe {
+      position: relative;
+      width: 340px;
+      height: 340px;
+      border-radius: 50%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 30% 30%, #93c5fd 0%, #3b82f6 35%, #1d4ed8 68%, #1e3a8a 100%);
+      box-shadow:
+        inset -28px -24px 55px rgba(0,0,0,0.25),
+        inset 24px 24px 50px rgba(255,255,255,0.18),
+        0 18px 45px rgba(30, 64, 175, 0.25);
+    }
+
+    /* Rain */
+    .rain-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 4;
+      overflow: hidden;
+    }
+
+    .raindrop {
+      position: absolute;
+      width: 2px;
+      height: 16px;
+      background: linear-gradient(to bottom, rgba(191,219,254,0.2), rgba(37,99,235,0.9));
+      border-radius: 999px;
+      animation: rainFall linear infinite;
+      opacity: 0;
+    }
+
+    @keyframes rainFall {
+      from { transform: translateY(-20px); }
+      to { transform: translateY(360px); }
+    }
+
+    .globe::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 28% 24%, rgba(255,255,255,0.45), transparent 28%);
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .latitude-line {
+      position: absolute;
+      left: 10%;
+      right: 10%;
+      border-top: 1px dashed rgba(255,255,255,0.35);
+      z-index: 1;
+    }
+
+    .latitude-line.top { top: 25%; }
+    .latitude-line.mid { top: 50%; border-top: 2px dashed rgba(239,68,68,0.9); }
+    .latitude-line.bottom { top: 75%; }
+
+    .continent {
+      position: absolute;
+      left: 50%;
+      top: 0%;
+      width: 56%;
+      height: 100%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #65a30d 0%, #22c55e 45%, #15803d 100%);
+      border-radius: 40% 60% 40% 60% / 0% 0% 0% 0%;
+      box-shadow:
+        inset 0 0 24px rgba(0,0,0,0.14),
+        0 0 0 3px rgba(255,255,255,0.08);
+      z-index: 2;
+    }
+
+    .continent::before,
+    .continent::after {
+      content: "";
+      position: absolute;
+      background: rgba(20, 83, 45, 0.22);
+      border-radius: 50%;
+    }
+
+    .continent::before {
+      width: 32%;
+      height: 18%;
+      left: 18%;
+      top: 18%;
+      transform: rotate(-12deg);
+    }
+
+    .continent::after {
+      width: 26%;
+      height: 14%;
+      right: 16%;
+      bottom: 20%;
+      transform: rotate(10deg);
+    }
+
+    .shore-glow {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      background: radial-gradient(circle at 36% 50%, transparent 0 29%, rgba(255,255,255,0.22) 31%, transparent 36%);
+      opacity: 0.75;
+    }
+
+    .box {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fef2f2, #ef4444 65%, #991b1b 100%);
+      border: 3px solid white;
+      box-shadow: 0 0 0 4px rgba(239,68,68,0.18), 0 10px 18px rgba(15,23,42,0.25);
+      transform: translate(-50%, -50%);
+      z-index: 6;
+      transition: left 0.25s ease, top 0.25s ease;
+    }
+
+    .box::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 100%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 12px solid #ef4444;
+    }
+
+    .biome-card {
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .biome-icon {
+      width: 120px;
+      height: 120px;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      color: white;
+      box-shadow: inset 0 0 24px rgba(255,255,255,0.1);
+    }
+
+    .biome-name {
+      margin: 0 0 6px;
+      font-size: 1.75rem;
+      font-weight: 800;
+    }
+
+    .biome-desc {
+      margin: 0;
+      color: #475569;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 950px) {
+      .layout { grid-template-columns: 1fr; }
+      .panel { position: static; }
+      .biome-card { grid-template-columns: 1fr; text-align: center; }
+      .biome-icon { margin: 0 auto; }
+      .globe-wrap { width: 100%; }
+      .globe { width: 300px; height: 300px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Biome Slider Simulator</h1>
+    <p class="subtitle">Adjust latitude, sunlight, precipitation, and distance from the coast. The map marker moves on the globe, and the biome changes based on the climate conditions.</p>
+
+    <div class="layout">
+      <div class="panel">
+        <h2>Controls</h2>
+
+        <div class="control-group">
+          <div class="control-header">
+            <span>Latitude</span>
+            <span class="value-pill" id="latVal">0°</span>
+          </div>
+          <input id="lat" type="range" min="-90" max="90" value="0">
+          <div class="range-labels">
+            <span>-90°</span>
+            <span>0°</span>
+            <span>90°</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-header">
+            <span>Solar Radiation</span>
+            <span class="value-pill" id="solVal">50</span>
+          </div>
+          <input id="sol" type="range" min="0" max="100" value="50">
+          <div class="range-labels">
+            <span>Low</span>
+            <span>Medium</span>
+            <span>High</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-header">
+            <span>Precipitation</span>
+            <span class="value-pill" id="rainVal">50</span>
+          </div>
+          <input id="rain" type="range" min="0" max="100" value="50">
+          <div class="range-labels">
+            <span>Dry</span>
+            <span>Moderate</span>
+            <span>Wet</span>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-header">
+            <span>Location</span>
+            <span class="value-pill" id="locVal">Coastal</span>
+          </div>
+          <input id="loc" type="range" min="0" max="100" value="0">
+          <div class="range-labels">
+            <span>Coast</span>
+            <span>Midland</span>
+            <span>Interior</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="right-col">
+        <div class="visual-card">
+          <h2>Globe View</h2>
+          <div class="labels">
+            <div class="label-chip">Top = North Pole</div>
+            <div class="label-chip">Middle = Equator</div>
+            <div class="label-chip">Bottom = South Pole</div>
+          </div>
+
+          <div class="world">
+            <div class="sun" id="sun"></div>
+            <div class="north-tag">-90° North Pole</div>
+            <div class="south-tag">90° South Pole</div>
+            <div class="equator-tag">0° Equator</div>
+            <div class="ocean-tag">West</div>
+            <div class="land-tag">East</div>
+
+            <div class="globe-wrap">
+              <div class="globe-shadow"></div>
+              <div class="globe" id="globe">
+                <div class="rain-layer" id="rainLayer"></div>
+                <div class="latitude-line top"></div>
+                <div class="latitude-line mid"></div>
+                <div class="latitude-line bottom"></div>
+                <div class="continent" id="continent"></div>
+                <div class="shore-glow"></div>
+                <div class="box" id="box"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="biome-card">
+          <div class="biome-icon" id="biomeIcon">🌾</div>
+          <div>
+            <h2 class="biome-name" id="biome">Grassland</h2>
+            <p class="biome-desc" id="biomeDesc">Moderate rainfall and open interior land support grasses more than large forests.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const lat = document.getElementById('lat');
+    const sol = document.getElementById('sol');
+    const rain = document.getElementById('rain');
+    const loc = document.getElementById('loc');
+
+    const box = document.getElementById('box');
+    const biomeText = document.getElementById('biome');
+    const biomeDesc = document.getElementById('biomeDesc');
+    const biomeIcon = document.getElementById('biomeIcon');
+    const sun = document.getElementById('sun');
+    const rainLayer = document.getElementById('rainLayer');
+    const worldEl = document.querySelector('.world');
+
+    function getBiome(latitude, solar, precip, location) {
+      const absLat = Math.abs(latitude);
+
+      // Arctic Tundra
+      if (absLat > 70) {
+        return {
+          name: 'Arctic Tundra',
+          icon: '❄️',
+          color: 'linear-gradient(135deg, #60a5fa, #93c5fd)',
+          desc: 'Extremely cold with little vegetation and short growing seasons.'
+        };
+      }
+
+      // Alpine (high latitude + moderate precip)
+      if (absLat > 50 && solar < 40) {
+        return {
+          name: 'Alpine',
+          icon: '⛰️',
+          color: 'linear-gradient(135deg, #64748b, #94a3b8)',
+          desc: 'Cold, windy environments often found at high elevations.'
+        };
+      }
+
+      // Desert
+      if (precip < 20 && solar > 60 && location > 40) {
+        return {
+          name: 'Desert',
+          icon: '🌵',
+          color: 'linear-gradient(135deg, #f59e0b, #d97706)',
+          desc: 'Very dry with little rainfall, often hot and inland.'
+        };
+      }
+
+      // Tropical Rainforest
+      if (absLat < 20 && precip > 70 && solar > 60) {
+        return {
+          name: 'Tropical Rainforest',
+          icon: '🌴',
+          color: 'linear-gradient(135deg, #16a34a, #15803d)',
+          desc: 'Hot and wet year-round with dense vegetation.'
+        };
+      }
+
+      // Savannah
+      if (absLat < 25 && precip >= 30 && precip <= 60) {
+        return {
+          name: 'Savannah',
+          icon: '🦒',
+          color: 'linear-gradient(135deg, #facc15, #84cc16)',
+          desc: 'Warm with seasonal rainfall, grasslands with scattered trees.'
+        };
+      }
+
+      // Coniferous Forest
+      if (absLat >= 40 && precip > 40) {
+        return {
+          name: 'Coniferous Forest',
+          icon: '🌲',
+          color: 'linear-gradient(135deg, #065f46, #16a34a)',
+          desc: 'Cold forests dominated by evergreen trees.'
+        };
+      }
+
+      // Deciduous Forest
+      if (absLat >= 25 && absLat < 50 && precip > 50) {
+        return {
+          name: 'Deciduous Forest',
+          icon: '🍂',
+          color: 'linear-gradient(135deg, #22c55e, #65a30d)',
+          desc: 'Moderate climate with trees that lose leaves seasonally.'
+        };
+      }
+
+      // Grasslands
+      return {
+        name: 'Grasslands',
+        icon: '🌾',
+        color: 'linear-gradient(135deg, #eab308, #84cc16)',
+        desc: 'Moderate rainfall supports grasses more than forests.'
+      };
+    }
+
+    function createRain() {
+      for (let i = 0; i < 40; i++) {
+        const drop = document.createElement('div');
+        drop.className = 'raindrop';
+        drop.style.left = Math.random() * 100 + '%';
+        drop.style.animationDuration = (0.7 + Math.random() * 0.8) + 's';
+        drop.style.animationDelay = Math.random() * 2 + 's';
+        rainLayer.appendChild(drop);
+      }
+    }
+
+    createRain();
+
+    function update() {
+      const latitude = Number(lat.value);
+      const solar = Number(sol.value);
+      const precipitation = Number(rain.value);
+      const location = Number(loc.value);
+
+      document.getElementById('latVal').textContent = `${latitude}°`;
+      document.getElementById('solVal').textContent = solar;
+      document.getElementById('rainVal').textContent = precipitation;
+
+      let locationLabel = 'Coastal';
+      if (location > 33 && location < 67) locationLabel = 'Midland';
+      if (location >= 67) locationLabel = 'Interior';
+      document.getElementById('locVal').textContent = locationLabel;
+
+      const y = ((latitude + 90) / 180) * 100;
+
+      // Left edge of land to center of land.
+      const coastEdge = 30;
+      const centerLand = 50;
+      const x = coastEdge + (location / 100) * (centerLand - coastEdge);
+
+      box.style.left = `${x}%`;
+      box.style.top = `${y}%`;
+
+      // Update sun based on solar radiation
+      const scale = 0.6 + (solar / 100) * 1.2;
+      sun.style.transform = `scale(${scale})`;
+      sun.style.opacity = 0.4 + (solar / 100) * 0.6;
+
+      // Rain intensity based on precipitation
+      const rainIntensity = precipitation / 100;
+      document.querySelectorAll('.raindrop').forEach(drop => {
+        drop.style.opacity = rainIntensity;
+      });
+
+      const biome = getBiome(latitude, solar, precipitation, location);
+      biomeText.textContent = biome.name;
+      biomeDesc.textContent = biome.desc;
+      biomeIcon.textContent = biome.icon;
+      biomeIcon.style.background = biome.color;
+
+      // Background changes based on biome
+      let bg;
+      switch (biome.name) {
+        case 'Desert':
+          bg = 'linear-gradient(to bottom, #fde68a, #f59e0b)';
+          break;
+        case 'Arctic Tundra':
+          bg = 'linear-gradient(to bottom, #e0f2fe, #93c5fd)';
+          break;
+        case 'Grasslands':
+          bg = 'linear-gradient(to bottom, #fef9c3, #84cc16)';
+          break;
+        case 'Coniferous Forest':
+          bg = 'linear-gradient(to bottom, #bbf7d0, #065f46)';
+          break;
+        case 'Deciduous Forest':
+          bg = 'linear-gradient(to bottom, #dcfce7, #65a30d)';
+          break;
+        case 'Tropical Rainforest':
+          bg = 'linear-gradient(to bottom, #86efac, #15803d)';
+          break;
+        case 'Alpine':
+          bg = 'linear-gradient(to bottom, #e5e7eb, #64748b)';
+          break;
+        case 'Savannah':
+          bg = 'linear-gradient(to bottom, #fde68a, #84cc16)';
+          break;
+        default:
+          bg = 'linear-gradient(to bottom, #bfdbfe, #ecfeff)';
+      }
+
+      worldEl.style.background = bg;
+    }
+
+    [lat, sol, rain, loc].forEach(el => el.addEventListener('input', update));
+    update();
+  </script>
+</body>
+</html>
